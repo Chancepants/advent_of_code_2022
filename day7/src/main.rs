@@ -1,4 +1,5 @@
 use std::fs;
+use std::num;
 
 const MAX_DIR_SIZE: u32 = 100_000;
 
@@ -195,18 +196,18 @@ fn calculate_total(arena_tree: &ArenaTree, root: usize, mut grand_total: u32) ->
     return grand_total;
 }
 
-fn part_one(input_lines: &Vec<&str>) {
-    let mut current_idx = 0;
-    let mut current_node_idx = 0;
-    let mut arena_tree = ArenaTree::new();
-    while current_idx < input_lines.len() {
-        let (command, command_output, next_idx) = get_next_command(current_idx, input_lines);
-        // println!("command: {}, command output: {:?}, next_idx: {}", command, command_output, next_idx);
-        current_node_idx =
-            execute_command(&command, &command_output, &mut arena_tree, current_node_idx);
-        // arena_tree.print(None, 0);
-        current_idx = next_idx;
+fn search_closest(arena_tree: &ArenaTree, root: usize, target_size: u32, mut closest: u32) -> u32 {
+    let root_total = arena_tree.traverse_and_sum(root);
+    if root_total >= target_size && root_total < closest && arena_tree.arena[root].filesize == 0{
+        closest = root_total;
     }
+    for &child in &arena_tree.arena[root].children {
+        closest = search_closest(arena_tree, child, target_size, closest);
+    }
+    return closest;
+}
+
+fn part_one(arena_tree: &ArenaTree) {
     // file system is now initialized
     let root: usize = 0;
     arena_tree.print(Some(root), 0);
@@ -214,8 +215,33 @@ fn part_one(input_lines: &Vec<&str>) {
     println!("ans: {}", ans);
 }
 
+fn part_two(arena_tree: &ArenaTree) {
+    let total_disk: u32 = 70_000_000;
+    let required_free: u32 = 30_000_000;
+    let total_used = arena_tree.traverse_and_sum(0);
+    let total_remaining = total_disk - total_used;
+    println!("Total Remaining: {}", total_remaining);
+    let target_dir_size = required_free - total_remaining;
+    let ans = search_closest(arena_tree, 0, target_dir_size, total_disk);
+    println!("Target Dir Size: {}", target_dir_size);
+    println!("Ans {}", ans);
+
+}
+
 fn main() {
     let input_str: String = fs::read_to_string("./src/input.txt").expect("failed to read file");
     let input_lines: Vec<&str> = input_str.split("\n").collect();
-    part_one(&input_lines);
+    let mut current_idx = 0;
+    let mut current_node_idx = 0;
+    let mut arena_tree = ArenaTree::new();
+    while current_idx < input_lines.len() {
+        let (command, command_output, next_idx) = get_next_command(current_idx, &input_lines);
+        // println!("command: {}, command output: {:?}, next_idx: {}", command, command_output, next_idx);
+        current_node_idx =
+            execute_command(&command, &command_output, &mut arena_tree, current_node_idx);
+        // arena_tree.print(None, 0);
+        current_idx = next_idx;
+    }
+    // part_one(&arena_tree);
+    part_two(&arena_tree);
 }
