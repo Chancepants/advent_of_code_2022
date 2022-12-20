@@ -1,5 +1,4 @@
 use std::fs;
-use std::num;
 
 const MAX_DIR_SIZE: u32 = 100_000;
 
@@ -37,28 +36,19 @@ impl ArenaTree {
         return total_size;
     }
 
-    fn print(&self, root: Option<usize>, indentation: usize) {
-        let mut start = 0;
+    fn print(&self, root: usize, indentation: usize) {
         let indent = String::from(" ").repeat(indentation);
-        if root.is_some() {
-            start = root.unwrap();
-        } else {
-            println!("====================================")
-        }
         println!(
             "{}index: {}, filename: {}, filesize: {}, parent: {}, children: {:?}",
             indent,
-            self.arena[start].idx,
-            self.arena[start].filename,
-            self.arena[start].filesize,
-            self.arena[start].parent.unwrap_or_default(),
-            self.arena[start].children
+            self.arena[root].idx,
+            self.arena[root].filename,
+            self.arena[root].filesize,
+            self.arena[root].parent.unwrap_or_default(),
+            self.arena[root].children
         );
-        for child in &self.arena[start].children {
-            self.print(Some(*child), indentation + 2);
-        }
-        if start == 0 {
-            println!("====================================")
+        for &child in &self.arena[root].children {
+            self.print(child, indentation + 2);
         }
     }
 }
@@ -178,9 +168,6 @@ fn get_next_command(index: usize, input_lines: &Vec<&str>) -> (String, Vec<Strin
     return (command, command_output, new_index);
 }
 
-// recurse through tree executing traverse_and_sum at each node
-// if the sum returned from traverse_and_sum is greater than the max then return 0 breaking the recursion for that branch
-// else add the sum to the total and keep going
 fn calculate_total(arena_tree: &ArenaTree, root: usize, mut grand_total: u32) -> u32 {
     let root_total = arena_tree.traverse_and_sum(root);
     if root_total <= MAX_DIR_SIZE && arena_tree.arena[root].filesize == 0 {
@@ -198,7 +185,7 @@ fn calculate_total(arena_tree: &ArenaTree, root: usize, mut grand_total: u32) ->
 
 fn search_closest(arena_tree: &ArenaTree, root: usize, target_size: u32, mut closest: u32) -> u32 {
     let root_total = arena_tree.traverse_and_sum(root);
-    if root_total >= target_size && root_total < closest && arena_tree.arena[root].filesize == 0{
+    if root_total >= target_size && root_total < closest && arena_tree.arena[root].filesize == 0 {
         closest = root_total;
     }
     for &child in &arena_tree.arena[root].children {
@@ -208,9 +195,7 @@ fn search_closest(arena_tree: &ArenaTree, root: usize, target_size: u32, mut clo
 }
 
 fn part_one(arena_tree: &ArenaTree) {
-    // file system is now initialized
     let root: usize = 0;
-    arena_tree.print(Some(root), 0);
     let ans = calculate_total(&arena_tree, root, 0);
     println!("ans: {}", ans);
 }
@@ -225,7 +210,6 @@ fn part_two(arena_tree: &ArenaTree) {
     let ans = search_closest(arena_tree, 0, target_dir_size, total_disk);
     println!("Target Dir Size: {}", target_dir_size);
     println!("Ans {}", ans);
-
 }
 
 fn main() {
@@ -236,12 +220,11 @@ fn main() {
     let mut arena_tree = ArenaTree::new();
     while current_idx < input_lines.len() {
         let (command, command_output, next_idx) = get_next_command(current_idx, &input_lines);
-        // println!("command: {}, command output: {:?}, next_idx: {}", command, command_output, next_idx);
         current_node_idx =
             execute_command(&command, &command_output, &mut arena_tree, current_node_idx);
-        // arena_tree.print(None, 0);
         current_idx = next_idx;
     }
-    // part_one(&arena_tree);
+    arena_tree.print(0, 0);
+    part_one(&arena_tree);
     part_two(&arena_tree);
 }
