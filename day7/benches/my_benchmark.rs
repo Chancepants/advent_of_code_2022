@@ -1,4 +1,5 @@
 use std::fs;
+use criterion::{black_box, Criterion, criterion_group, criterion_main};
 
 const MAX_DIR_SIZE: u32 = 100_000;
 
@@ -29,10 +30,8 @@ impl ArenaTree {
             return self.arena[root].filesize;
         }
         for &child in &self.arena[root].children {
-            println!("Traversing child at index {}", child);
             total_size += self.traverse_and_sum(child);
         }
-        println!("Root: {}, Total Size: {}", root, total_size);
         return total_size;
     }
 
@@ -43,10 +42,8 @@ impl ArenaTree {
             return self.arena[root].filesize;
         }
         for &child in &self.arena[root].children {
-            println!("Traversing child at index {}", child);
             total_size += self.traverse_and_sum_vec(child, dir_size_vec);
         }
-        println!("Root: {}, Total Size: {}", root, total_size);
         if total_size <= MAX_DIR_SIZE {
             dir_size_vec.push(total_size);
         }
@@ -190,10 +187,6 @@ fn calculate_total(arena_tree: &ArenaTree, root: usize, mut grand_total: u32) ->
     let root_total = arena_tree.traverse_and_sum(root);
     if root_total <= MAX_DIR_SIZE && arena_tree.arena[root].filesize == 0 {
         grand_total += root_total;
-        println!(
-            "Root {}, Root Total {}, Grand Total {}",
-            root, root_total, grand_total
-        )
     }
     for &child in &arena_tree.arena[root].children {
         grand_total = calculate_total(arena_tree, child, grand_total);
@@ -215,16 +208,49 @@ fn search_closest(arena_tree: &ArenaTree, root: usize, target_size: u32, mut clo
 fn part_one(arena_tree: &ArenaTree) {
     let root: usize = 0;
     let ans = calculate_total(&arena_tree, root, 0);
+}
+
+fn part_one_better(arena_tree: &ArenaTree) {
     let mut init_vec: Vec<u32> = vec![];
     let mut total: u32 = 0;
     arena_tree.traverse_and_sum_vec(0, &mut init_vec);
     for val in init_vec {
         total += val;
     }
-    println!("second try: {}", total);
-    println!("ans: {}", ans);
 }
 
+fn criterion_bench_part_one(c: &mut Criterion) {
+    let input_str: String = fs::read_to_string("./src/input.txt").expect("failed to read file");
+    let input_lines: Vec<&str> = input_str.split("\n").collect();
+    let mut current_idx = 0;
+    let mut current_node_idx = 0;
+    let mut arena_tree = ArenaTree::new();
+    while current_idx < input_lines.len() {
+        let (command, command_output, next_idx) = get_next_command(current_idx, &input_lines);
+        current_node_idx =
+            execute_command(&command, &command_output, &mut arena_tree, current_node_idx);
+        current_idx = next_idx;
+    }
+    c.bench_function("slower hopefully", |b| b.iter(|| part_one(black_box(&arena_tree))));
+}
+
+fn criterion_bench_part_one_better(c: &mut Criterion) {
+    let input_str: String = fs::read_to_string("./src/input.txt").expect("failed to read file");
+    let input_lines: Vec<&str> = input_str.split("\n").collect();
+    let mut current_idx = 0;
+    let mut current_node_idx = 0;
+    let mut arena_tree = ArenaTree::new();
+    while current_idx < input_lines.len() {
+        let (command, command_output, next_idx) = get_next_command(current_idx, &input_lines);
+        current_node_idx =
+            execute_command(&command, &command_output, &mut arena_tree, current_node_idx);
+        current_idx = next_idx;
+    }
+    c.bench_function("faster hopefully", |b| b.iter(|| part_one_better(black_box(&arena_tree))));
+}
+
+criterion_group!(benches, criterion_bench_part_one, criterion_bench_part_one_better);
+criterion_main!(benches);
 
 fn part_two(arena_tree: &ArenaTree) {
     let total_disk: u32 = 70_000_000;
@@ -238,20 +264,20 @@ fn part_two(arena_tree: &ArenaTree) {
     println!("Ans {}", ans);
 }
 
-fn main() {
-    let input_str: String = fs::read_to_string("./src/input.txt").expect("failed to read file");
-    let input_lines: Vec<&str> = input_str.split("\n").collect();
-    let mut current_idx = 0;
-    let mut current_node_idx = 0;
-    let mut arena_tree = ArenaTree::new();
-    while current_idx < input_lines.len() {
-        let (command, command_output, next_idx) = get_next_command(current_idx, &input_lines);
-        current_node_idx =
-            execute_command(&command, &command_output, &mut arena_tree, current_node_idx);
-        current_idx = next_idx;
-    }
-    arena_tree.print(0, 0);
+// fn main() {
+//     let input_str: String = fs::read_to_string("./src/input.txt").expect("failed to read file");
+//     let input_lines: Vec<&str> = input_str.split("\n").collect();
+//     let mut current_idx = 0;
+//     let mut current_node_idx = 0;
+//     let mut arena_tree = ArenaTree::new();
+//     while current_idx < input_lines.len() {
+//         let (command, command_output, next_idx) = get_next_command(current_idx, &input_lines);
+//         current_node_idx =
+//             execute_command(&command, &command_output, &mut arena_tree, current_node_idx);
+//         current_idx = next_idx;
+//     }
+//     arena_tree.print(0, 0);
 
-    part_one(&arena_tree);
-    part_two(&arena_tree);
-}
+//     part_one(&arena_tree);
+    // part_two(&arena_tree);
+// }
