@@ -1,11 +1,10 @@
-use std::{fs, collections::HashSet};
+use std::{collections::HashSet, fs};
 
 #[derive(Debug, PartialEq)]
 enum InstructionName {
     Addx,
     Noop,
 }
-
 
 struct Instruction {
     name: InstructionName,
@@ -15,11 +14,17 @@ struct Instruction {
 impl Instruction {
     fn new_addx(str_value: &str) -> Instruction {
         let value = str_value.parse::<i32>().unwrap();
-        return Instruction { name: InstructionName::Addx, args: vec![value]};
+        return Instruction {
+            name: InstructionName::Addx,
+            args: vec![value],
+        };
     }
 
     fn new_noop() -> Instruction {
-        return Instruction { name: InstructionName::Noop, args: vec![] };
+        return Instruction {
+            name: InstructionName::Noop,
+            args: vec![],
+        };
     }
 }
 
@@ -30,8 +35,7 @@ fn get_instructions(input_str: &str) -> Vec<Instruction> {
         let instruction_parts: Vec<&str> = instruction_line.split_whitespace().collect();
         if instruction_parts[0] == "noop" {
             instructions.push(Instruction::new_noop())
-        }
-        else if instruction_parts[0] == "addx" {
+        } else if instruction_parts[0] == "addx" {
             instructions.push(Instruction::new_addx(instruction_parts[1]));
         }
     }
@@ -41,7 +45,10 @@ fn get_instructions(input_str: &str) -> Vec<Instruction> {
 fn check_cycle_and_compute(cycle_count: i32, register_x: i32) -> i32 {
     if cycle_count == 20 || (cycle_count - 20) % 40 == 0 {
         let signal_strength = cycle_count * register_x;
-        println!("Current Cycle: {}, signal_strength: {}", cycle_count, signal_strength);
+        println!(
+            "Current Cycle: {}, signal_strength: {}",
+            cycle_count, signal_strength
+        );
         return signal_strength;
     }
     0
@@ -75,8 +82,7 @@ fn handle_cycle(cycle_count: i32, register_x: i32, crt: &mut Vec<Vec<char>>) {
     let pixel_position = (cycle_count - 1) % 40;
     if sprite_set.contains(&pixel_position) {
         crt[crt_idx].push('#');
-    }
-    else {
+    } else {
         crt[crt_idx].push(' ');
     }
 }
@@ -100,11 +106,9 @@ fn part_two(instructions: &Vec<Instruction>) {
     }
 }
 
-
 fn main() {
     let input_str = fs::read_to_string("./src/input.txt").unwrap();
     let instructions = get_instructions(&input_str);
     part_one(&instructions);
     part_two(&instructions);
-
-}   
+}
