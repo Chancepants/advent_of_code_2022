@@ -1,0 +1,12 @@
+[package]
+name = "day12"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+log = "0.4"
+strum = "0.24.1"
+strum_macros = "0.24"
+plotlib = "0.5.1"
